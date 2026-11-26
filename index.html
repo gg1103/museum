@@ -1019,7 +1019,7 @@ window.SITE.model = {
     'assets/model-viewer.min.js'
   ];
 
-  // 远程镜像并行竞速：谁先加载成功用谁，避免被某一个慢地址拖死
+  // 远程镜像按顺序试，每个给足时间。慢网下同时下载多个大文件会互相抢带宽，反而更慢
   var REMOTE_SOURCES = [
     'https://cdn.bootcdn.net/ajax/libs/model-viewer/4.4.0/model-viewer.min.js',
     'https://lib.baomitu.com/model-viewer/4.4.0/model-viewer.min.js',
@@ -1036,28 +1036,20 @@ window.SITE.model = {
   async function ensureViewer() {
     if (isReady()) return true;
 
-    // 1) 先试本地文件，命中时几乎瞬间完成
+    // 1) 本地文件，命中时几乎瞬间完成
     for (var i = 0; i < LOCAL_SOURCES.length; i++) {
       try { await withTimeout(loadScript(LOCAL_SOURCES[i]), 2500); } catch (e) { continue; }
       try { await withTimeout(customElements.whenDefined('model-viewer'), 2500); return true; } catch (e) {}
     }
 
-    // 2) 远程镜像同时发起，第一个成功的胜出
-    return new Promise(function (resolve) {
-      var settled = false;
-      function finish(ok) {
-        if (settled) return;
-        settled = true;
-        resolve(ok);
-      }
-      REMOTE_SOURCES.forEach(function (url) {
-        loadScript(url)
-          .then(function () { return customElements.whenDefined('model-viewer'); })
-          .then(function () { finish(true); })
-          .catch(function () { /* 这个镜像不行，忽略 */ });
-      });
-      setTimeout(function () { finish(isReady()); }, 12000);
-    });
+    // 2) 远程镜像依次尝试，界面显示进度，避免看起来像卡死
+    for (var j = 0; j < REMOTE_SOURCES.length; j++) {
+      showOverlay('正在载入三维组件 · 第 ' + (j + 1) + ' / ' + REMOTE_SOURCES.length + ' 个来源');
+      try { await withTimeout(loadScript(REMOTE_SOURCES[j]), 20000); } catch (e) { continue; }
+      try { await withTimeout(customElements.whenDefined('model-viewer'), 8000); return true; } catch (e) {}
+    }
+
+    return false;
   }
 
   var CAMS = ['32deg 78deg auto', '104deg 76deg auto', '18deg 20deg auto'];
