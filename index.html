@@ -1013,9 +1013,13 @@ window.SITE.model = {
     ]);
   }
 
-  // 本地文件优先（离线场景），再依次尝试两个 CDN
+  // 优先用网站里的本地文件（离线也能用），其次是国内镜像，最后才是境外 CDN
   var SOURCES = [
+    'model-viewer.min.js',
     'assets/model-viewer.min.js',
+    'https://jsd.onmicrosoft.cn/npm/@google/model-viewer/dist/model-viewer.min.js',
+    'https://npm.elemecdn.com/@google/model-viewer/dist/model-viewer.min.js',
+    'https://fastly.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js',
     'https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js',
     'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js'
   ];
@@ -1023,9 +1027,9 @@ window.SITE.model = {
   async function ensureViewer() {
     if (window.customElements && customElements.get('model-viewer')) return true;
     for (var i = 0; i < SOURCES.length; i++) {
-      try { await loadScript(SOURCES[i]); } catch (e) { continue; }
+      try { await withTimeout(loadScript(SOURCES[i]), 4500); } catch (e) { continue; }
       try {
-        await withTimeout(customElements.whenDefined('model-viewer'), 9000);
+        await withTimeout(customElements.whenDefined('model-viewer'), 4500);
         return true;
       } catch (e) { /* 加载到了但没定义，继续试下一个 */ }
     }
@@ -1142,7 +1146,7 @@ mv.src = (SITE.model && SITE.model.src) || 'assets/model.glb';
     if (ok) {
       setupViewer();
     } else {
-      showOverlay('三维组件未能载入 · 请检查网络后刷新');
+      showOverlay('3D 组件下载失败 · 请把 model-viewer.min.js 放进网站根目录，或换网络后刷新');
       var btn = document.createElement('button');
       btn.type = 'button';
       btn.textContent = '重新载入';
