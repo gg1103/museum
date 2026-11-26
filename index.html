@@ -1013,27 +1013,51 @@ window.SITE.model = {
     ]);
   }
 
-  // 优先用网站里的本地文件（离线也能用），其次是国内镜像，最后才是境外 CDN
-  var SOURCES = [
+  // 本地文件优先（离线也能用，放一个 model-viewer.min.js 到网站根目录即可）
+  var LOCAL_SOURCES = [
     'model-viewer.min.js',
-    'assets/model-viewer.min.js',
-    'https://jsd.onmicrosoft.cn/npm/@google/model-viewer/dist/model-viewer.min.js',
-    'https://npm.elemecdn.com/@google/model-viewer/dist/model-viewer.min.js',
-    'https://fastly.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js',
-    'https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js',
-    'https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js'
+    'assets/model-viewer.min.js'
   ];
 
+  // 远程镜像并行竞速：谁先加载成功用谁，避免被某一个慢地址拖死
+  var REMOTE_SOURCES = [
+    'https://cdn.bootcdn.net/ajax/libs/model-viewer/4.4.0/model-viewer.min.js',
+    'https://lib.baomitu.com/model-viewer/4.4.0/model-viewer.min.js',
+    'https://cdn.staticfile.net/model-viewer/4.4.0/model-viewer.min.js',
+    'https://cdn.jsdmirror.com/npm/@google/model-viewer/dist/model-viewer.min.js',
+    'https://cdnjs.cloudflare.com/ajax/libs/model-viewer/4.4.0/model-viewer.min.js',
+    'https://cdn.jsdelivr.net/npm/@google/model-viewer/dist/model-viewer.min.js'
+  ];
+
+  function isReady() {
+    return !!(window.customElements && customElements.get('model-viewer'));
+  }
+
   async function ensureViewer() {
-    if (window.customElements && customElements.get('model-viewer')) return true;
-    for (var i = 0; i < SOURCES.length; i++) {
-      try { await withTimeout(loadScript(SOURCES[i]), 4500); } catch (e) { continue; }
-      try {
-        await withTimeout(customElements.whenDefined('model-viewer'), 4500);
-        return true;
-      } catch (e) { /* 加载到了但没定义，继续试下一个 */ }
+    if (isReady()) return true;
+
+    // 1) 先试本地文件，命中时几乎瞬间完成
+    for (var i = 0; i < LOCAL_SOURCES.length; i++) {
+      try { await withTimeout(loadScript(LOCAL_SOURCES[i]), 2500); } catch (e) { continue; }
+      try { await withTimeout(customElements.whenDefined('model-viewer'), 2500); return true; } catch (e) {}
     }
-    return false;
+
+    // 2) 远程镜像同时发起，第一个成功的胜出
+    return new Promise(function (resolve) {
+      var settled = false;
+      function finish(ok) {
+        if (settled) return;
+        settled = true;
+        resolve(ok);
+      }
+      REMOTE_SOURCES.forEach(function (url) {
+        loadScript(url)
+          .then(function () { return customElements.whenDefined('model-viewer'); })
+          .then(function () { finish(true); })
+          .catch(function () { /* 这个镜像不行，忽略 */ });
+      });
+      setTimeout(function () { finish(isReady()); }, 12000);
+    });
   }
 
   var CAMS = ['32deg 78deg auto', '104deg 76deg auto', '18deg 20deg auto'];
