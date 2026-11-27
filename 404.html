@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>找不到这一页 — 樓語</title>
+<link rel="icon" href="/museum/favicon.png" sizes="128x128">
+<style>
+  :root {
+    --paper: #f2ede0;
+    --ink: #1a1815;
+    --verm: #c4402b;
+    --muted: #6f6859;
+    --kai: "KaiTi", "STKaiti", "Kaiti SC", "SimSun", serif;
+    --song: "Songti SC", "STSong", "SimSun", serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 26px;
+    padding: 40px;
+    text-align: center;
+    background: radial-gradient(120% 90% at 50% 0%, #fbf7ee 0%, #f2ede0 58%, #ece5d5 100%);
+    color: var(--ink);
+    font-family: var(--song);
+  }
+  .mark {
+    font-family: var(--kai);
+    font-size: 64px;
+    letter-spacing: 0.1em;
+    margin: 0;
+  }
+  .code {
+    font-family: Georgia, serif;
+    font-size: 12px;
+    letter-spacing: 0.4em;
+    color: var(--muted);
+    margin: 0;
+  }
+  p.lead {
+    margin: 0;
+    font-size: 15px;
+    line-height: 2;
+    color: #3e3a33;
+    max-width: 26em;
+  }
+  a.back {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 13px 26px;
+    border: 1px solid rgba(26, 24, 21, 0.3);
+    color: var(--ink);
+    text-decoration: none;
+    font-size: 13px;
+    letter-spacing: 0.24em;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+  }
+  a.back:hover { background: var(--verm); border-color: var(--verm); color: #faf6ec; }
+  .rule { width: 56px; height: 1.5px; background: var(--verm); }
+</style>
+</head>
+<body>
+  <p class="code">404</p>
+  <h1 class="mark">樓語</h1>
+  <div class="rule"></div>
+  <p class="lead">这一页不在展线上。<br>也许链接抄错了，或者这一件还没有挂上去。</p>
+  <a class="back" href="/museum/">回到展览</a>
+</body>
+</html>

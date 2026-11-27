@@ -160,15 +160,34 @@
   var mv = document.getElementById('mv');
   var overlay = document.getElementById('stageOverlay');
   var overlayMsg = document.getElementById('stageMsg');
+  var bar = document.getElementById('stageBar');
+  var barFill = document.getElementById('stageBarFill');
+  var baseMsg = '正在载入三维模型';
 
   function showOverlay(msg) {
     if (!overlay) return;
     overlay.classList.remove('is-hidden');
-    if (overlayMsg && msg) overlayMsg.textContent = msg;
+    if (overlayMsg && msg) {
+      overlayMsg.textContent = msg;
+      baseMsg = msg;
+    }
   }
 
   function hideOverlay() {
     if (overlay) overlay.classList.add('is-hidden');
+  }
+
+  function setProgress(p) {
+    if (barFill) barFill.style.width = Math.max(0, Math.min(1, p)) * 100 + '%';
+    if (overlayMsg) {
+      var pct = Math.round(Math.max(0, Math.min(1, p)) * 100);
+      overlayMsg.textContent = pct > 0 ? baseMsg + ' · ' + pct + '%' : baseMsg;
+    }
+  }
+
+  function resetProgress() {
+    if (bar) bar.hidden = false;
+    setProgress(0);
   }
 
   function loadScript(url, asModule) {
@@ -242,6 +261,7 @@
 
   var CAMS = ['28deg 76deg auto', '104deg 74deg auto', '16deg 18deg auto'];
   var hasFallenBack = false;
+  var pendingCameraReset = false;
 
   /* ---------------- 多模型切换 ---------------- */
 
@@ -302,6 +322,7 @@
 
     if (!silent) {
       mv.setAttribute('camera-orbit', CAMS[0]);
+      pendingCameraReset = true;
       mv.setAttribute('auto-rotate', '');
       var rot = document.getElementById('toggleRotate');
       if (rot) { rot.classList.add('is-on'); rot.setAttribute('aria-pressed', 'true'); }
@@ -310,6 +331,7 @@
     }
 
     showOverlay('正在载入 ' + (m.name || '模型'));
+    resetProgress();
     mv.src = m.src;
   }
 
@@ -337,7 +359,18 @@
       arBtn.classList.toggle('is-visible', !!mv.canActivateAR);
     }
 
+    mv.addEventListener('progress', function (event) {
+      var p = (event && event.detail && typeof event.detail.totalProgress === 'number')
+        ? event.detail.totalProgress : 0;
+      setProgress(p);
+    });
+
     mv.addEventListener('load', function () {
+      if (pendingCameraReset) {
+        mv.setAttribute('camera-orbit', CAMS[0]);
+        pendingCameraReset = false;
+      }
+      setProgress(1);
       hideOverlay();
       syncAr();
       setTimeout(syncAr, 1500);   // canActivateAR 有时要等检测完成

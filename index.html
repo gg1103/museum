@@ -6,9 +6,15 @@
 <title>樓語 — Echoes of the Arcades</title>
 <meta name="description" content="本科毕业设计数字展览：三座骑楼的三维重构，可自由旋转观察。">
 <meta name="theme-color" content="#f2ede0">
+<link rel="icon" href="favicon.png" sizes="128x128">
+<link rel="apple-touch-icon" href="favicon.png">
 <meta property="og:title" content="樓語 — Echoes of the Arcades">
 <meta property="og:description" content="本科毕业设计数字展览：三座骑楼的三维重构，可自由旋转观察。">
 <meta property="og:type" content="website">
+<meta property="og:image" content="https://gg1103.github.io/museum/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -88,6 +94,7 @@
       <div class="stage-overlay" id="stageOverlay">
         <span class="dots"><i></i><i></i><i></i></span>
         <span id="stageMsg">正在载入三维模型</span>
+        <span class="stage-bar" id="stageBar" hidden><i id="stageBarFill"></i></span>
       </div>
       <p class="stage-cap"><span id="stageModelName"></span><em id="stageModelEn"></em></p>
       <p class="stage-hint">
