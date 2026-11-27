@@ -334,7 +334,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   place-items: center;
   min-height: 0;
   overflow: hidden;
-  background: linear-gradient(180deg, #f7f2e6 0%, #f2ede0 55%, #e9e2d2 100%);
+  background:
+    radial-gradient(ellipse 62% 52% at 50% 40%, #f4efe2 0%, #e9e1ce 58%, #d9cfb8 100%),
+    linear-gradient(180deg, #efe9db 0%, #e2d9c4 100%);
 }
 
 .stage-glow {
@@ -342,8 +344,9 @@ button { font: inherit; color: inherit; background: none; border: none; cursor: 
   inset: 0;
   pointer-events: none;
   background:
-    radial-gradient(ellipse 54% 44% at 50% 42%, rgba(255, 253, 246, 0.95), transparent 70%),
-    radial-gradient(ellipse 40% 9% at 50% 84%, rgba(26, 24, 21, 0.10), transparent 72%);
+    radial-gradient(ellipse 46% 38% at 50% 42%, rgba(255, 253, 246, 0.75), transparent 72%),
+    radial-gradient(ellipse 34% 6.5% at 50% 86%, rgba(26, 24, 21, 0.30), transparent 70%),
+    radial-gradient(ellipse 90% 70% at 50% 50%, transparent 55%, rgba(26, 24, 21, 0.10) 100%);
 }
 
 model-viewer {
