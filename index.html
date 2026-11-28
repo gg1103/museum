@@ -3,158 +3,76 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>樓語 — Echoes of the Arcades</title>
-<meta name="description" content="本科毕业设计数字展览：三座骑楼的三维重构，可自由旋转观察。">
-<meta name="theme-color" content="#f2ede0">
+<title>樓語 · 檔案 — Echoes of the Arcades</title>
+<meta name="description" content="骑楼浮雕细部档案：八件浮雕，在烛光下依次显影。移动鼠标，光会跟着走。">
+<meta name="theme-color" content="#080706">
 <link rel="icon" href="favicon.png" sizes="128x128">
 <link rel="apple-touch-icon" href="favicon.png">
-<meta property="og:title" content="樓語 — Echoes of the Arcades">
-<meta property="og:description" content="本科毕业设计数字展览：三座骑楼的三维重构，可自由旋转观察。">
+<meta property="og:title" content="樓語 · 檔案">
+<meta property="og:description" content="八件骑楼浮雕，在烛光下依次显影。">
 <meta property="og:type" content="website">
 <meta property="og:image" content="https://gg1103.github.io/museum/og.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="gallery.css">
 </head>
 <body>
 
-<!-- 底纹纹样（取自海报原图） -->
-<div class="ornaments" aria-hidden="true">
-  <img class="orn orn-scroll orn-tl" src="orn-scroll.png" alt="">
-  <img class="orn orn-scroll orn-tr" src="orn-scroll.png" alt="">
-  <img class="orn orn-leaf orn-br" src="orn-flower.png" alt="">
-  <img class="orn orn-leaf orn-bl" src="orn-flower.png" alt="">
-</div>
-
-<div class="grain" aria-hidden="true"></div>
-<div class="marks" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
-
-<header class="topbar">
-  <a class="mark" href="#intro">
+<header class="bar">
+  <a class="mark" href="index.html">
     <span class="mark-cn" data-bind="title">樓語</span>
-    <span class="mark-en" data-bind="titleEn">ECHOES OF THE ARCADES</span>
+    <span class="mark-sub">檔案</span>
   </a>
-  <nav class="nav" aria-label="主导航">
-    <a class="nav-item" href="#intro" data-view="intro"><i>I</i><span>序</span></a>
-    <a class="nav-item" href="#object" data-view="object"><i>II</i><span>展</span></a>
-    <a class="nav-item" href="#statement" data-view="statement"><i>III</i><span>述</span></a>
-    <a class="nav-item" href="archive.html"><i>IV</i><span>檔</span></a>
+  <nav class="bar-nav">
+    <button type="button" class="btn" id="litAll" aria-pressed="false">点亮全部</button>
   </nav>
 </header>
 
-<main id="main">
-
-  <!-- ============ I. 序 ============ -->
-  <section class="view view-intro" id="view-intro" aria-label="序">
-    <p class="intro-verse" aria-hidden="true"><span data-bind="introVerse">月光光照地堂</span></p>
-
-    <div class="intro-inner">
-      <p class="eyebrow" data-bind="introEyebrow">本科毕业设计 · 数字展览</p>
-      <h1 class="display" data-bind="introTitle">樓語</h1>
-      <p class="intro-en" data-bind="introTitleEn">Echoes of the Arcades</p>
-      <div class="rule"></div>
-      <p class="intro-lead" data-bind="introLead"></p>
-      <a class="enter" href="#object">
-        <span>进入展览</span>
-        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h15M13 6l6 6-6 6"/></svg>
-      </a>
-      <dl class="intro-meta" data-bind="introMeta"></dl>
-    </div>
-
-    <p class="intro-aside" aria-hidden="true"><span data-bind="introAside">广西骑楼</span></p>
-    <span class="page-no" aria-hidden="true">01</span>
+<main>
+  <section class="hero">
+    <p class="eyebrow">Echoes of the Arcades · Relief Archive</p>
+    <h1 data-bind="title">樓語</h1>
+    <p class="en" data-bind="titleEn">Echoes of the Arcades</p>
+    <p class="lead" data-bind="lead"></p>
+    <p class="hint"><i class="dot"></i>移动鼠标，烛光会跟着走</p>
   </section>
 
-  <!-- ============ II. 展 ============ -->
-  <section class="view view-object" id="view-object" aria-label="展">
-    <div class="stage">
-      <div class="stage-glow" aria-hidden="true"></div>
-      <model-viewer
-        id="mv"
-        alt="骑楼的三维模型"
-        camera-controls
-        touch-action="pan-y"
-        auto-rotate
-        auto-rotate-delay="1500"
-        rotation-per-second="10deg"
-        interaction-prompt="none"
-        shadow-intensity="0.5"
-        shadow-softness="0.85"
-        exposure="1.18"
-        environment-image="neutral"
-        tone-mapping="neutral"
-        camera-orbit="28deg 76deg auto"
-        min-field-of-view="12deg"
-        max-field-of-view="55deg"
-        ar
-        ar-modes="webxr scene-viewer quick-look"
-      >
-        <button class="ar-button" slot="ar-button" type="button">AR 查看</button>
-      </model-viewer>
-      <div class="stage-overlay" id="stageOverlay">
-        <span class="dots"><i></i><i></i><i></i></span>
-        <span id="stageMsg">正在载入三维模型</span>
-        <span class="stage-bar" id="stageBar" hidden><i id="stageBarFill"></i></span>
-      </div>
-      <p class="stage-cap"><span id="stageModelName"></span><em id="stageModelEn"></em></p>
-      <p class="stage-hint">
-        <span class="k">拖动</span>旋转　<span class="k">滚轮</span>缩放　<span class="k">双击</span>复位
-      </p>
-    </div>
+  <div class="section-head">
+    <h2 data-bind="sectionTitle">浮雕细部</h2>
+    <span>共 <b id="count">08</b> 件</span>
+  </div>
 
-    <aside class="panel">
-      <p class="eyebrow" data-bind="objectEyebrow">作品 · II</p>
-      <h2 class="panel-title" data-bind="objectTitle"></h2>
-      <p class="panel-en" data-bind="objectTitleEn"></p>
-      <p class="panel-summary" data-bind="objectSummary"></p>
+  <section class="grid" id="grid" aria-label="浮雕档案"></section>
 
-      <div class="hairline"></div>
-      <div class="model-list" id="modelList" role="group" aria-label="切换模型"></div>
-      <p class="model-caption" id="modelCaption"></p>
-
-      <div class="hairline"></div>
-      <dl class="specs" data-bind="objectSpecs"></dl>
-
-      <div class="hairline"></div>
-      <div class="cameras" role="group" aria-label="切换观察视角">
-        <button type="button" data-camera="0" class="cam is-on">正视</button>
-        <button type="button" data-camera="1" class="cam">侧视</button>
-        <button type="button" data-camera="2" class="cam">俯视</button>
-      </div>
-      <div class="toggles">
-        <button type="button" class="tog is-on" id="toggleRotate" aria-pressed="true">自动旋转</button>
-        <button type="button" class="tog is-on" id="toggleShadow" aria-pressed="true">投影</button>
-      </div>
-
-      <a class="read-more" href="#statement">阅读作品释文 <span aria-hidden="true">→</span></a>
-    </aside>
-    <span class="page-no" aria-hidden="true">02</span>
-  </section>
-
-  <!-- ============ III. 述 ============ -->
-  <section class="view view-statement" id="view-statement" aria-label="述">
-    <article class="essay">
-      <p class="eyebrow" data-bind="statementEyebrow">作品释文</p>
-      <h2 class="essay-title" data-bind="statementTitle"></h2>
-      <div class="essay-body" data-bind="statementBody"></div>
-      <blockquote class="pullquote" data-bind="statementQuote"></blockquote>
-      <div class="hairline"></div>
-      <dl class="credits" data-bind="credits"></dl>
-      <p class="colophon" data-bind="colophon"></p>
-    </article>
-    <span class="page-no" aria-hidden="true">03</span>
-  </section>
-
+  <footer class="foot">
+    <span data-bind="footL"></span>
+    <span data-bind="footR"></span>
+  </footer>
 </main>
 
-<noscript>
-  <p style="padding:96px 24px;font-family:serif">
-    本页面需要开启 JavaScript 才能显示三维模型与文字内容。
-  </p>
-</noscript>
+<!-- 暗幕与烛光 -->
+<div class="veil" aria-hidden="true"></div>
+<div class="warm" aria-hidden="true"></div>
+<div class="candle" aria-hidden="true">
+  <span class="glow"></span>
+  <span class="flame"></span>
+</div>
+
+<!-- 放大查看 -->
+<div class="viewer" id="viewer" hidden>
+  <div class="viewer-top">
+    <span class="no" id="viewerNo"></span>
+    <button type="button" class="btn" id="viewerClose">关闭 ✕</button>
+  </div>
+  <div class="viewer-stage" id="viewerStage"></div>
+  <div class="viewer-bottom">
+    <h3 id="viewerName"></h3>
+    <p id="viewerNote"></p>
+  </div>
+</div>
 
 <script src="content.js"></script>
-<script src="app.js"></script>
+<script src="gallery.js"></script>
 </body>
 </html>
