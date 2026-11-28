@@ -88,6 +88,13 @@
 
       model.appendChild(mv);
 
+      // 有画框的模型：把画框推到可视区外
+      if (item.crop) {
+        var c = typeof item.crop === 'number' ? item.crop : 1.16;
+        mv.style.transform = 'scale(' + c + ')';
+        slide.classList.add('is-crop');
+      }
+
       var cap = document.createElement('div');
       cap.className = 'slide-cap';
       var no = document.createElement('span');
@@ -155,20 +162,26 @@
       s.classList.toggle('is-center', d <= w * 0.45);
     });
     current = keepCurrent ? current : best;
+    if (!wheelTimer) wheelTarget = current;
     queueTilt();
   }
 
-  /* ---------------- 滚轮（灵敏度 +15%） ---------------- */
-  var lastWheel = 0;
-  var WHEEL_GAP = 365;   // 原 420ms，缩短 15%
+  /* ---------------- 滚轮（快速连滚会累积步数，跟得上手速） ---------------- */
+  var wheelTarget = 0;
+  var wheelTimer = null;
+
   railEl.addEventListener('wheel', function (e) {
     e.preventDefault();
-    var now = Date.now();
-    if (now - lastWheel < WHEEL_GAP) return;
-    if (Math.abs(e.deltaY) < 4 && Math.abs(e.deltaX) < 4) return;
-    lastWheel = now;
     var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
-    go(current + (d > 0 ? 1 : -1));
+    if (Math.abs(d) < 4) return;
+
+    wheelTarget = Math.max(0, Math.min(slides.length - 1, wheelTarget + (d > 0 ? 1 : -1)));
+
+    if (wheelTimer) return;
+    wheelTimer = setTimeout(function () {
+      wheelTimer = null;
+      go(wheelTarget);
+    }, 70);
   }, { passive: false });
 
   window.addEventListener('keydown', function (e) {
@@ -257,9 +270,10 @@
     }
 
     modalBase = { theta: baseTheta(item), phi: BASE_PHI };
-    modalViewer.setAttribute('src', item.src);
+
+    // 先定机位再给 src，否则首次打开会从默认角度反转过来
     modalViewer.setAttribute('camera-orbit', modalBase.theta + 'deg ' + modalBase.phi + 'deg auto');
-    applyTilt();
+    modalViewer.setAttribute('src', item.src);
 
     if (modalNo) modalNo.textContent = item.no || '';
     if (modalName) modalName.textContent = item.name || '';

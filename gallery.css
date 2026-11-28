@@ -82,11 +82,11 @@ body::after {
 .mark { display: flex; align-items: baseline; gap: 9px; }
 .mark-cn {
   font-family: var(--kai);
-  font-size: 22px;
+  font-size: 24px;
   letter-spacing: 0.18em;
 }
 .mark-sub {
-  font-size: 10.5px;
+  font-size: 11.5px;
   letter-spacing: 0.3em;
   color: var(--muted);
 }
@@ -94,7 +94,7 @@ body::after {
   display: inline-flex;
   align-items: center;
   gap: 9px;
-  font-size: 11px;
+  font-size: 12px;
   letter-spacing: 0.22em;
   color: var(--muted);
 }
@@ -135,12 +135,12 @@ main {
   margin: 0;
   font-family: var(--kai);
   font-weight: 400;
-  font-size: clamp(18px, 1.9vw, 24px);
+  font-size: clamp(20px, 2.1vw, 26px);
   letter-spacing: 0.2em;
 }
 .section-head span {
   font-family: var(--latin);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.28em;
   color: var(--faint);
 }
@@ -152,7 +152,7 @@ main {
   min-height: 0;
   display: flex;
   align-items: center;
-  gap: clamp(17px, 3.4vw, 54px);   /* 距离缩了 15% */
+  gap: clamp(18px, 3.6vw, 57px);   /* 在上版基础上再分开 6% */
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
@@ -174,10 +174,10 @@ main {
   border: none;
   padding: 0;
   cursor: none;
-  opacity: 0.8;                 /* 非中心：暗 20% */
+  opacity: 0.72;                /* 更远：暗 28% */
   transition: opacity 0.5s var(--ease);
 }
-.slide.is-near { opacity: 0.9; } /* 相邻：暗 10% */
+.slide.is-near { opacity: 0.85; } /* 相邻：暗 15% */
 .slide.is-center { opacity: 1; }
 
 .model {
@@ -188,7 +188,7 @@ main {
   transition: transform 0.55s var(--ease);
   transform: scale(1);
 }
-.slide.is-center .model { transform: scale(1.1); }   /* 居中放大 10% */
+.slide.is-center .model { transform: scale(1.07); }  /* 居中放大 7% */
 
 .model model-viewer {
   width: 100%;
@@ -201,8 +201,10 @@ main {
 }
 .model model-viewer::part(default-progress-bar) { display: none; }
 
-/* 有画框的模型：放大一点把框推出可视区 */
-.slide.is-crop .model model-viewer { transform: scale(1.16); }
+/* 有画框的模型：兜底规则（具体倍率由 content.js 的 crop 数值内联设置） */
+.slide.is-crop .model model-viewer { transform: scale(1.2); }
+
+/* 有画框的模型：由 JS 按件设置缩放把框推出可视区 */
 
 .model::after {
   content: "";
@@ -227,12 +229,12 @@ main {
 .slide.is-center .slide-cap { opacity: 1; }
 .cap-no {
   font-family: var(--latin);
-  font-size: 9.5px;
+  font-size: 10.5px;
   letter-spacing: 0.24em;
   color: var(--faint);
 }
 .cap-name {
-  font-size: 12.5px;
+  font-size: 13.5px;
   letter-spacing: 0.12em;
   color: var(--ink-dim);
 }
@@ -250,7 +252,7 @@ main {
 .arch-line {
   margin: 0;
   font-family: var(--kai);
-  font-size: clamp(17px, 1.8vw, 24px);
+  font-size: clamp(19px, 2vw, 26px);
   letter-spacing: 0.44em;
   text-indent: 0.44em;
   color: #f0e8d8;
@@ -261,7 +263,7 @@ main {
   flex-wrap: wrap;
   gap: 8px 26px;
   justify-content: center;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.2em;
   color: var(--faint);
 }
@@ -291,8 +293,8 @@ main {
   overflow: hidden;
 }
 .modal-stage model-viewer {
-  width: min(78vw, 1000px);
-  height: 100%;
+  width: min(68vw, 880px);
+  height: min(66vh, 720px);
   background: transparent;
   --poster-color: transparent;
   --progress-bar-color: transparent;
