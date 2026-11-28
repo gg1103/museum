@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>檔案 · 樓語 — Echoes of the Arcades</title>
+<meta name="description" content="骑楼细部档案：花砖、女儿墙、窗花，十件。移动蜡烛，光会扫过砖面。">
+<meta name="theme-color" content="#0a0806">
+<link rel="icon" href="favicon.png" sizes="128x128">
+<meta property="og:title" content="檔案 · 樓語">
+<meta property="og:image" content="https://gg1103.github.io/museum/og.png">
+<link rel="stylesheet" href="archive.css">
+</head>
+<body>
+
+<div class="room">
+  <header class="bar">
+    <a class="mark" href="index.html">
+      <span class="mark-cn">樓語</span>
+      <span class="mark-sep">·</span>
+      <span class="mark-sub">檔案</span>
+    </a>
+    <nav class="bar-nav">
+      <button type="button" class="btn" id="litAll" aria-pressed="false">点亮全部</button>
+      <a class="btn" href="index.html">返回展厅</a>
+    </nav>
+  </header>
+
+  <main class="stage">
+    <div class="head">
+      <p class="eyebrow">Relief Archive · 十件</p>
+      <h1 class="title" data-bind="archiveTitle">骑楼细部档案</h1>
+      <p class="lead" data-bind="archiveLead">移动鼠标，烛光会扫过砖面。</p>
+    </div>
+
+    <div class="grid" id="grid" role="list"></div>
+
+    <p class="foot">
+      <span data-bind="archiveFoot">摄影测量重建 · 广西艺术学院</span>
+    </p>
+  </main>
+</div>
+
+<div class="veil" id="veil" aria-hidden="true"></div>
+<div class="warm" id="warm" aria-hidden="true"></div>
+<div class="candle" id="candle" aria-hidden="true">
+  <span class="glow"></span>
+  <span class="flame"></span>
+</div>
+
+<script src="content.js"></script>
+<script src="archive.js"></script>
+</body>
+</html>

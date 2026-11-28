@@ -73,6 +73,25 @@ window.SITE = {
   ],
   colophon: '本页面所有三维内容由作者本人制作，文字与图像版权归作者所有。',
 
+  /* ---------- 四、檔案（烛光展厅） ----------
+     图片放在 photos 文件夹，用同名文件覆盖即可换成你自己的照片。
+     名称和编号会显示在卡片下方。 */
+  archiveTitle: '骑楼细部档案',
+  archiveLead: '移动鼠标，烛光会扫过砖面。十件细部，来自三座骑楼的门廊、女儿墙与窗。',
+  archiveFoot: '摄影测量重建 · 广西艺术学院',
+  archive: [
+    { no: '01', name: '花砖 · 八角团花', src: 'photo-01.jpg' },
+    { no: '02', name: '花砖 · 菱格', src: 'photo-02.jpg' },
+    { no: '03', name: '花砖 · 四角花', src: 'photo-03.jpg' },
+    { no: '04', name: '花砖 · 同心圆', src: 'photo-04.jpg' },
+    { no: '05', name: '花砖 · 十字花', src: 'photo-05.jpg' },
+    { no: '06', name: '花砖 · 波浪', src: 'photo-06.jpg' },
+    { no: '07', name: '花砖 · 鱼骨', src: 'photo-07.jpg' },
+    { no: '08', name: '花砖 · 回纹', src: 'photo-08.jpg' },
+    { no: '09', name: '花砖 · 放射', src: 'photo-09.jpg' },
+    { no: '10', name: '花砖 · 菱形角花', src: 'photo-10.jpg' }
+  ],
+
   /* ---------- 模型加载兜底 ---------- */
   model: {
     fallback: 'placeholder.gltf'
