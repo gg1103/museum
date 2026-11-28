@@ -18,11 +18,11 @@ window.SITE = {
      src 是模型文件名，name / note 会显示在卡片和放大页 */
   items: [
     {
-      no: '01', name: '卷草浮雕', src: 'relief-1.glb',
+      no: '01', name: '卷草浮雕', src: 'relief-1.glb', flip: 180,
       note: '门廊檐下的卷草，向两侧延展，收口处收成一个涡。'
     },
     {
-      no: '02', name: '装饰浮雕', src: 'relief-2.glb',
+      no: '02', name: '装饰浮雕', src: 'relief-2.glb', flip: 180,
       note: '窗楣上方的对称装饰，左右各一，中间留白。'
     },
     {
@@ -34,15 +34,15 @@ window.SITE = {
       note: '单片叶片，边缘翻卷，背后有浅浅的底衬。'
     },
     {
-      no: '05', name: '风景浮雕', src: 'relief-5.glb',
+      no: '05', name: '风景浮雕', src: 'relief-5.glb', flip: 180,
       note: '一块带景物的浮雕板，近景、中景、远景层层压低。'
     },
     {
-      no: '06', name: '浮雕花纹', src: 'relief-6.glb',
+      no: '06', name: '浮雕花纹', src: 'relief-6.glb', flip: 180,
       note: '反复排列的几何花纹，原本是整排使用的。'
     },
     {
-      no: '07', name: '石刻浮雕', src: 'relief-7.glb',
+      no: '07', name: '石刻浮雕', src: 'relief-7.glb', flip: 180,
       note: '石质残件，表面有明显的风化与缺损。'
     },
     {

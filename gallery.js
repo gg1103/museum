@@ -1,5 +1,5 @@
 /* ============================================================
-   檔案页：浮雕网格 + 烛光增亮 + 浮尘粒子 + 限幅旋转
+   檔案页：一排陈列 · 滚轮切换 · 拖动旋转 · 烛光增亮
    ============================================================ */
 
 (function () {
@@ -8,13 +8,17 @@
   var SITE = window.SITE || {};
   var items = Array.isArray(SITE.items) ? SITE.items : [];
 
-  var grid = document.getElementById('grid');
-  var countEl = document.getElementById('count');
+  var railEl = document.getElementById('rail');
   var dust = document.getElementById('dust');
+  var countEl = document.getElementById('count');
 
-  var BASE_THETA = -90;   // 模型整体右转 90° 后的正面朝向（若转反了，改成 90）
-  var BASE_PHI = 82;      // 略微俯视，能看出浮雕厚度
+  var BASE_THETA = -90;   // 模型整体右转 90°（若转反了改成 90）
+  var BASE_PHI = 82;      // 略微俯视
   var LIMIT = 20;         // 上下左右最大偏转 ±20°
+
+  var slides = [];
+  var viewers = [];
+  var current = 0;
 
   /* ---------------- 载入 model-viewer ---------------- */
   var SOURCES = [
@@ -43,89 +47,176 @@
     return false;
   }
 
-  /* ---------------- 卡片 ---------------- */
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
 
-  function makeCard(item, i) {
-    var card = document.createElement('article');
-    card.className = 'card';
+  function baseTheta(item) {
+    return BASE_THETA + (item.flip || 0);
+  }
 
-    var media = document.createElement('div');
-    media.className = 'card-media';
+  /* ---------------- 构建一排 ---------------- */
+  function build() {
+    railEl.innerHTML = '';
+    slides = [];
+    viewers = [];
+    if (countEl) countEl.textContent = items.length ? String(items.length).padStart(2, '0') : '00';
 
-    var mv = document.createElement('model-viewer');
-    mv.setAttribute('alt', item.name || ('浮雕 ' + (i + 1)));
-    mv.setAttribute('src', item.src);
-    mv.setAttribute('environment-image', 'neutral');
-    mv.setAttribute('tone-mapping', 'neutral');
-    mv.setAttribute('exposure', '1.0');
-    mv.setAttribute('shadow-intensity', '0.4');
-    mv.setAttribute('shadow-softness', '1');
-    mv.setAttribute('interaction-prompt', 'none');
-    mv.setAttribute('camera-orbit', BASE_THETA + 'deg ' + BASE_PHI + 'deg auto');
-    mv.setAttribute('min-field-of-view', '18deg');
-    mv.setAttribute('touch-action', 'none');
-    mv.setAttribute('loading', 'lazy');
-    mv.setAttribute('reveal', 'auto');
+    items.forEach(function (item, i) {
+      var slide = document.createElement('div');
+      slide.className = 'slide';
 
-    media.appendChild(mv);
+      var model = document.createElement('div');
+      model.className = 'model';
 
-    var cap = document.createElement('div');
-    cap.className = 'card-cap';
-    var no = document.createElement('span');
-    no.className = 'cap-no';
-    no.textContent = item.no || String(i + 1).padStart(2, '0');
-    var name = document.createElement('span');
-    name.className = 'cap-name';
-    name.textContent = item.name || '';
-    cap.appendChild(no);
-    cap.appendChild(name);
+      var mv = document.createElement('model-viewer');
+      mv.setAttribute('alt', item.name || ('浮雕 ' + (i + 1)));
+      mv.setAttribute('src', item.src);
+      mv.setAttribute('environment-image', 'neutral');
+      mv.setAttribute('tone-mapping', 'neutral');
+      mv.setAttribute('exposure', '1.0');
+      mv.setAttribute('shadow-intensity', '0.4');
+      mv.setAttribute('shadow-softness', '1');
+      mv.setAttribute('interaction-prompt', 'none');
+      mv.setAttribute('camera-orbit', baseTheta(item) + 'deg ' + BASE_PHI + 'deg auto');
+      mv.setAttribute('min-field-of-view', '18deg');
+      mv.setAttribute('touch-action', 'pan-x');
+      mv.setAttribute('loading', 'lazy');
+      mv.setAttribute('reveal', 'auto');
 
-    card.appendChild(media);
-    card.appendChild(cap);
+      model.appendChild(mv);
 
-    /* 拖动旋转，限制在 ±20° */
-    var state = { theta: 0, phi: 0, dragging: false, x: 0, y: 0 };
+      var cap = document.createElement('div');
+      cap.className = 'slide-cap';
+      var no = document.createElement('span');
+      no.className = 'cap-no';
+      no.textContent = item.no || String(i + 1).padStart(2, '0');
+      var name = document.createElement('span');
+      name.className = 'cap-name';
+      name.textContent = item.name || '';
+      cap.appendChild(no);
+      cap.appendChild(name);
 
-    media.addEventListener('pointerdown', function (e) {
-      state.dragging = true;
-      state.x = e.clientX;
-      state.y = e.clientY;
-      state.theta = 0;
-      state.phi = 0;
+      slide.appendChild(model);
+      slide.appendChild(cap);
+      railEl.appendChild(slide);
+
+      slides.push(slide);
+      viewers.push(mv);
+
+      bindDrag(model, mv, item);
+    });
+  }
+
+  /* ---------------- 拖动旋转（修好卡死：用指针捕获，移出也不中断） ---------------- */
+  function bindDrag(modelEl, mv, item) {
+    var drag = null;
+
+    modelEl.addEventListener('pointerdown', function (e) {
+      drag = {
+        id: e.pointerId,
+        x: e.clientX,
+        y: e.clientY,
+        touch: e.pointerType === 'touch',
+        locked: false
+      };
+      try { modelEl.setPointerCapture(e.pointerId); } catch (err) {}
     });
 
-    window.addEventListener('pointermove', function (e) {
-      if (!state.dragging) return;
-      var dx = e.clientX - state.x;
-      var dy = e.clientY - state.y;
-      state.theta = clamp(dx * 0.14, -LIMIT, LIMIT);
-      state.phi = clamp(-dy * 0.14, -LIMIT, LIMIT);
+    modelEl.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+
+      var dx = e.clientX - drag.x;
+      var dy = e.clientY - drag.y;
+
+      // 触屏：横向手势交给页面滚动，不旋转
+      if (drag.touch) {
+        if (!drag.locked) {
+          if (Math.abs(dx) < 6 && Math.abs(dy) < 6) return;
+          if (Math.abs(dx) > Math.abs(dy)) { drag = null; return; }   // 让给横向滚动
+          drag.locked = true;
+        }
+      }
+
+      var theta = clamp(dx * 0.14, -LIMIT, LIMIT);
+      var phi = clamp(-dy * 0.14, -LIMIT, LIMIT);
       mv.setAttribute(
         'camera-orbit',
-        (BASE_THETA + state.theta).toFixed(2) + 'deg ' + (BASE_PHI + state.phi).toFixed(2) + 'deg auto'
+        (baseTheta(item) + theta).toFixed(2) + 'deg ' + (BASE_PHI + phi).toFixed(2) + 'deg auto'
       );
     });
 
-    function end() {
-      if (!state.dragging) return;
-      state.dragging = false;
+    function end(e) {
+      if (!drag) return;
+      try { modelEl.releasePointerCapture(drag.id); } catch (err) {}
+      drag = null;
     }
-    window.addEventListener('pointerup', end);
-    window.addEventListener('pointercancel', end);
-    media.addEventListener('pointerleave', end);
-
-    return card;
+    modelEl.addEventListener('pointerup', end);
+    modelEl.addEventListener('pointercancel', end);
+    modelEl.addEventListener('lostpointercapture', end);
   }
 
-  function build() {
-    if (!grid) return;
-    grid.innerHTML = '';
-    if (countEl) countEl.textContent = items.length ? String(items.length).padStart(2, '0') : '00';
-    items.forEach(function (item, i) { grid.appendChild(makeCard(item, i)); });
+  /* ---------------- 切换 ---------------- */
+  function centerOf(el) {
+    var r = el.getBoundingClientRect();
+    return r.left + r.width / 2;
   }
 
-  /* ---------------- 烛光位置 ---------------- */
+  function go(i, instant) {
+    current = Math.max(0, Math.min(slides.length - 1, i));
+    var target = slides[current];
+    if (!target) return;
+
+    // 手动居中，避免 scrollIntoView 连带滚动整个页面
+    var railRect = railEl.getBoundingClientRect();
+    var delta = centerOf(target) - (railRect.left + railRect.width / 2);
+    railEl.scrollTo({
+      left: railEl.scrollLeft + delta,
+      behavior: instant ? 'auto' : 'smooth'
+    });
+    updateCenter(true);
+  }
+
+  function updateCenter(keepCurrent) {
+    if (!slides.length) return;
+    var railRect = railEl.getBoundingClientRect();
+    var mid = railRect.left + railRect.width / 2;
+    var best = 0;
+    var bestD = Infinity;
+
+    slides.forEach(function (s, i) {
+      var d = Math.abs(centerOf(s) - mid);
+      if (d < bestD) { bestD = d; best = i; }
+      s.classList.toggle('is-near', d < railRect.width * 0.55);
+      s.classList.toggle('is-center', false);
+    });
+    slides[best].classList.add('is-center');
+    if (!keepCurrent) current = best;
+  }
+
+  /* ---------------- 滚轮切换 ---------------- */
+  var lastWheel = 0;
+  railEl.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var now = Date.now();
+    if (now - lastWheel < 420) return;
+    if (Math.abs(e.deltaY) < 4 && Math.abs(e.deltaX) < 4) return;
+    lastWheel = now;
+    var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    go(current + (d > 0 ? 1 : -1));
+  }, { passive: false });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); go(current + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(current - 1); }
+    if (e.key === 'l' || e.key === 'L') document.body.classList.toggle('is-lit');
+  });
+
+  var scrollTimer = null;
+  railEl.addEventListener('scroll', function () {
+    if (scrollTimer) clearTimeout(scrollTimer);
+    scrollTimer = setTimeout(updateCenter, 120);
+  }, { passive: true });
+
+  /* ---------------- 烛光 ---------------- */
   var tx = window.innerWidth * 0.5;
   var ty = window.innerHeight * 0.42;
   var px = tx, py = ty;
@@ -157,9 +248,8 @@
     requestAnimationFrame(lightLoop);
   }
 
-  /* ---------------- 浮尘粒子 ---------------- */
-  var ctx = null, W = 0, H = 0, dpr = 1;
-  var parts = [];
+  /* ---------------- 浮尘 ---------------- */
+  var ctx = null, W = 0, H = 0, dpr = 1, parts = [];
 
   function resizeCanvas() {
     if (!dust) return;
@@ -174,7 +264,7 @@
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
 
-  function seedParticles() {
+  function seed() {
     var n = Math.round(Math.min(90, Math.max(36, W * H / 26000)));
     parts = [];
     for (var i = 0; i < n; i++) {
@@ -182,7 +272,7 @@
         x: Math.random() * W,
         y: Math.random() * H,
         r: 0.6 + Math.random() * 1.7,
-        vy: -(0.12 + Math.random() * 0.42),          // 向上飘
+        vy: -(0.12 + Math.random() * 0.42),
         vx: (Math.random() - 0.5) * 0.18,
         ph: Math.random() * Math.PI * 2,
         sp: 0.4 + Math.random() * 0.8,
@@ -191,13 +281,10 @@
     }
   }
 
-  var frame = 0;
   function dustLoop() {
     if (!ctx) return;
-    frame++;
     ctx.clearRect(0, 0, W, H);
     ctx.globalCompositeOperation = 'lighter';
-
     for (var i = 0; i < parts.length; i++) {
       var p = parts[i];
       p.ph += 0.01 * p.sp;
@@ -207,12 +294,10 @@
       if (p.x < -12) p.x = W + 12;
       if (p.x > W + 12) p.x = -12;
 
-      // 靠近烛光时更亮
       var dx = p.x - px, dy = p.y - py;
       var d = Math.sqrt(dx * dx + dy * dy);
       var near = Math.max(0, 1 - d / 340);
       var glow = 0.35 + near * 1.6;
-
       var alpha = p.a * glow * (0.55 + 0.45 * Math.sin(p.ph * 1.7));
       if (alpha <= 0.01) continue;
 
@@ -225,27 +310,26 @@
       ctx.arc(p.x, p.y, p.r * 6, 0, Math.PI * 2);
       ctx.fill();
     }
-
     ctx.globalCompositeOperation = 'source-over';
     requestAnimationFrame(dustLoop);
   }
 
-  /* ---------------- 卡片光斑坐标 ---------------- */
+  /* ---------------- 光斑坐标 ---------------- */
   function measure() {
-    var els = document.querySelectorAll('.card-media');
+    var els = document.querySelectorAll('.model');
     for (var i = 0; i < els.length; i++) {
       var r = els[i].getBoundingClientRect();
-      els[i].style.setProperty('--card-x', r.left + 'px');
-      els[i].style.setProperty('--card-y', r.top + 'px');
+      els[i].style.setProperty('--model-x', r.left + 'px');
+      els[i].style.setProperty('--model-y', r.top + 'px');
     }
   }
 
   window.addEventListener('resize', function () {
     resizeCanvas();
-    seedParticles();
+    seed();
     measure();
+    updateCenter();
   });
-  window.addEventListener('scroll', measure, { passive: true });
 
   /* ---------------- 文案 ---------------- */
   function text(sel, v) { var n = document.querySelector(sel); if (n && v) n.textContent = v; }
@@ -255,13 +339,9 @@
   text('[data-bind="footL"]', SITE.footL);
   text('[data-bind="footR"]', SITE.footR);
 
-  document.addEventListener('keydown', function (e) {
-    if (e.key === 'l' || e.key === 'L') document.body.classList.toggle('is-lit');
-  });
-
   /* ---------------- 启动 ---------------- */
   resizeCanvas();
-  seedParticles();
+  seed();
   setLight(px, py);
   lastMove = Date.now() - 5000;
 
@@ -272,10 +352,13 @@
 
   ensureViewer().then(function (ok) {
     build();
-    if (!ok && grid) {
-      grid.innerHTML = '<p style="grid-column:1/-1;padding:40px 0;color:#8d8375;font-size:13px;letter-spacing:.2em">三维组件未能载入，请确认 model-viewer.min.js 已上传</p>';
+    if (ok) {
+      go(0, true);
+    } else if (railEl) {
+      railEl.innerHTML = '<p style="padding:40px;color:#8d8375;font-size:13px;letter-spacing:.2em">三维组件未能载入，请确认 model-viewer.min.js 已上传</p>';
     }
     measure();
-    setTimeout(measure, 900);
+    updateCenter();
+    setTimeout(function () { measure(); updateCenter(); }, 900);
   });
 })();
