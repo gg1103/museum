@@ -1,5 +1,5 @@
 /* ============================================================
-   檔案页：一排陈列 · 滚轮切换 · 随鼠标偏移 · 点击放大 · 烛光
+   檔案页：循环陈列 · 滚轮切换 · 中心模型随鼠标 · 点击放大
    ============================================================ */
 
 (function () {
@@ -17,13 +17,15 @@
   var modalName = document.getElementById('modalName');
 
   var BASE_THETA = -90;   // 整体朝向（若转反了改成 90）
-  var BASE_PHI = 82;      // 俯仰
+  var BASE_PHI = 82;
   var LIMIT = 20;         // 随鼠标偏移的最大角度
 
+  var N = items.length;
   var slides = [];
   var viewers = [];
   var bases = [];
   var current = 0;
+
   var modalViewer = null;
   var modalBase = { theta: BASE_THETA, phi: BASE_PHI };
 
@@ -57,23 +59,32 @@
   function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
   function baseTheta(item) { return BASE_THETA + (item.flip || 0); }
 
-  /* ---------------- 构建 ---------------- */
+  /* ---------------- 构建（首尾各挂一个克隆，形成无缝循环） ---------------- */
   function build() {
     railEl.innerHTML = '';
     slides = [];
     viewers = [];
     bases = [];
-    if (countEl) countEl.textContent = items.length ? String(items.length).padStart(2, '0') : '00';
+    if (countEl) countEl.textContent = N ? String(N).padStart(2, '0') : '00';
 
-    items.forEach(function (item, i) {
+    // 顺序：最后一件（前置克隆）→ 全部 → 第一件（后置克隆）
+    var order = [];
+    if (N > 1) order.push(N - 1);
+    for (var i = 0; i < N; i++) order.push(i);
+    if (N > 1) order.push(0);
+
+    order.forEach(function (itemIndex) {
+      var item = items[itemIndex];
+
       var slide = document.createElement('div');
-      slide.className = 'slide' + (item.crop ? ' is-crop' : '');
+      slide.className = 'slide';
+      slide.dataset.idx = String(itemIndex);
 
       var model = document.createElement('div');
       model.className = 'model';
 
       var mv = document.createElement('model-viewer');
-      mv.setAttribute('alt', item.name || ('浮雕 ' + (i + 1)));
+      mv.setAttribute('alt', item.name || ('浮雕 ' + (itemIndex + 1)));
       mv.setAttribute('src', item.src);
       mv.setAttribute('environment-image', 'neutral');
       mv.setAttribute('tone-mapping', 'neutral');
@@ -86,20 +97,18 @@
       mv.setAttribute('loading', 'lazy');
       mv.setAttribute('reveal', 'auto');
 
-      model.appendChild(mv);
+      // 载入瞬间把镜头钉死，避免从默认角度转过来
+      mv.addEventListener('load', function () {
+        if (typeof mv.jumpCameraToGoal === 'function') mv.jumpCameraToGoal();
+      });
 
-      // 有画框的模型：把画框推到可视区外
-      if (item.crop) {
-        var c = typeof item.crop === 'number' ? item.crop : 1.16;
-        mv.style.transform = 'scale(' + c + ')';
-        slide.classList.add('is-crop');
-      }
+      model.appendChild(mv);
 
       var cap = document.createElement('div');
       cap.className = 'slide-cap';
       var no = document.createElement('span');
       no.className = 'cap-no';
-      no.textContent = item.no || String(i + 1).padStart(2, '0');
+      no.textContent = item.no || String(itemIndex + 1).padStart(2, '0');
       var name = document.createElement('span');
       name.className = 'cap-name';
       name.textContent = item.name || '';
@@ -114,11 +123,11 @@
       viewers.push(mv);
       bases.push({ theta: baseTheta(item), phi: BASE_PHI });
 
-      model.addEventListener('click', function () { openModal(i); });
+      model.addEventListener('click', function () { openModal(itemIndex); });
     });
   }
 
-  /* ---------------- 首尾留白：让第一件也能居中 ---------------- */
+  /* ---------------- 首尾留白 ---------------- */
   function padRail() {
     var first = slides[0];
     if (!first) return;
@@ -134,9 +143,8 @@
     return r.left + r.width / 2;
   }
 
-  function go(i, instant) {
-    current = Math.max(0, Math.min(slides.length - 1, i));
-    var target = slides[current];
+  function scrollToSlide(i, instant) {
+    var target = slides[i];
     if (!target) return;
     var railRect = railEl.getBoundingClientRect();
     var delta = centerOf(target) - (railRect.left + railRect.width / 2);
@@ -144,6 +152,12 @@
       left: railEl.scrollLeft + delta,
       behavior: instant ? 'auto' : 'smooth'
     });
+  }
+
+  function go(i, instant) {
+    var idx = clamp(i, 0, slides.length - 1);
+    current = idx;
+    scrollToSlide(idx, instant);
     updateCenter(true);
   }
 
@@ -161,27 +175,41 @@
       s.classList.toggle('is-near', d > w * 0.45 && d < w * 1.6);
       s.classList.toggle('is-center', d <= w * 0.45);
     });
+
     current = keepCurrent ? current : best;
-    if (!wheelTimer) wheelTarget = current;
     queueTilt();
+
+    if (!keepCurrent) wrapIfNeeded();
   }
 
-  /* ---------------- 滚轮（快速连滚会累积步数，跟得上手速） ---------------- */
-  var wheelTarget = 0;
-  var wheelTimer = null;
+  /* ---------------- 无限循环：滚到首尾克隆时悄悄跳到真身 ---------------- */
+  function wrapIfNeeded() {
+    if (N < 2) return;
+    var target = -1;
+    if (current === 0) target = N;          // 前置克隆 → 最后一件真身
+    else if (current === N + 1) target = 1; // 后置克隆 → 第一件真身
+    if (target < 0) return;
 
+    var prev = railEl.style.scrollBehavior;
+    railEl.style.scrollBehavior = 'auto';
+    var railRect = railEl.getBoundingClientRect();
+    var delta = centerOf(slides[target]) - (railRect.left + railRect.width / 2);
+    railEl.scrollLeft = railEl.scrollLeft + delta;
+    current = target;
+    railEl.style.scrollBehavior = prev || '';
+  }
+
+  /* ---------------- 滚轮（恢复原来的手感：一次一格） ---------------- */
+  var lastWheel = 0;
+  var WHEEL_GAP = 365;
   railEl.addEventListener('wheel', function (e) {
     e.preventDefault();
+    var now = Date.now();
+    if (now - lastWheel < WHEEL_GAP) return;
     var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
     if (Math.abs(d) < 4) return;
-
-    wheelTarget = Math.max(0, Math.min(slides.length - 1, wheelTarget + (d > 0 ? 1 : -1)));
-
-    if (wheelTimer) return;
-    wheelTimer = setTimeout(function () {
-      wheelTimer = null;
-      go(wheelTarget);
-    }, 70);
+    lastWheel = now;
+    go(current + (d > 0 ? 1 : -1));
   }, { passive: false });
 
   window.addEventListener('keydown', function (e) {
@@ -200,7 +228,7 @@
     scrollTimer = setTimeout(function () { updateCenter(); }, 110);
   }, { passive: true });
 
-  /* ---------------- 模型随鼠标偏移（只有正中间那件） ---------------- */
+  /* ---------------- 只有中心模型随鼠标偏移 ---------------- */
   var tiltTheta = 0;
   var tiltPhi = 0;
   var tiltQueued = false;
@@ -215,7 +243,6 @@
   function applyTilt() {
     tiltQueued = false;
 
-    // 换了中间那件，把上一件复位
     if (lastTilted !== current) {
       if (lastTilted !== -1) resetViewer(lastTilted);
       lastTilted = current;
@@ -224,18 +251,13 @@
     var mv = viewers[current];
     if (mv) {
       var b = bases[current];
-      mv.setAttribute(
-        'camera-orbit',
-        (b.theta + tiltTheta).toFixed(2) + 'deg ' + (b.phi + tiltPhi).toFixed(2) + 'deg auto'
-      );
+      mv.setAttribute('camera-orbit',
+        (b.theta + tiltTheta).toFixed(2) + 'deg ' + (b.phi + tiltPhi).toFixed(2) + 'deg auto');
     }
 
-    // 放大页同样跟随
     if (modalViewer && modal && modal.classList.contains('is-open')) {
-      modalViewer.setAttribute(
-        'camera-orbit',
-        (modalBase.theta + tiltTheta).toFixed(2) + 'deg ' + (modalBase.phi + tiltPhi).toFixed(2) + 'deg auto'
-      );
+      modalViewer.setAttribute('camera-orbit',
+        (modalBase.theta + tiltTheta).toFixed(2) + 'deg ' + (modalBase.phi + tiltPhi).toFixed(2) + 'deg auto');
     }
   }
 
@@ -266,14 +288,33 @@
       modalViewer.setAttribute('shadow-intensity', '0.35');
       modalViewer.setAttribute('interaction-prompt', 'none');
       modalViewer.setAttribute('min-field-of-view', '14deg');
+      modalViewer.addEventListener('load', function () {
+        // 载入后先钉死镜头，再显形——彻底避免从背面转过来
+        if (typeof modalViewer.jumpCameraToGoal === 'function') modalViewer.jumpCameraToGoal();
+        modalViewer.style.opacity = '1';
+      });
       modalStage.appendChild(modalViewer);
     }
 
     modalBase = { theta: baseTheta(item), phi: BASE_PHI };
-
-    // 先定机位再给 src，否则首次打开会从默认角度反转过来
     modalViewer.setAttribute('camera-orbit', modalBase.theta + 'deg ' + modalBase.phi + 'deg auto');
-    modalViewer.setAttribute('src', item.src);
+
+    var same = modalViewer.getAttribute('src') === item.src;
+    if (!same) {
+      modalViewer.style.opacity = '0';
+      modalViewer.setAttribute('src', item.src);
+      // 保险：万一 load 没触发，1.2 秒后强制显形
+      setTimeout(function () { if (modalViewer) modalViewer.style.opacity = '1'; }, 1200);
+    } else {
+      modalViewer.style.opacity = '1';
+    }
+
+    if (typeof modalViewer.jumpCameraToGoal === 'function') {
+      modalViewer.jumpCameraToGoal();
+      setTimeout(function () {
+        if (modalViewer && typeof modalViewer.jumpCameraToGoal === 'function') modalViewer.jumpCameraToGoal();
+      }, 60);
+    }
 
     if (modalNo) modalNo.textContent = item.no || '';
     if (modalName) modalName.textContent = item.name || '';
@@ -291,11 +332,8 @@
   }
 
   if (modal) {
-    modal.addEventListener('click', function (e) {
-      // 点在模型本身不关闭，点其它任何地方都关闭
-      if (e.target && e.target.closest && e.target.closest('model-viewer')) return;
-      closeModal();
-    });
+    // 放大页里点任何地方都关掉（模型框内也算）
+    modal.addEventListener('click', function () { closeModal(); });
   }
 
   /* ---------------- 烛光 ---------------- */
@@ -435,9 +473,9 @@
 
   ensureViewer().then(function (ok) {
     build();
-    if (ok) {
+    if (ok && N) {
       padRail();
-      go(0, true);
+      go(1, true);          // 从第一件真身开始（左边是最后一件的克隆）
     } else if (railEl) {
       railEl.innerHTML = '<p style="padding:40px;color:#8d8375;font-size:13px;letter-spacing:.2em">三维组件未能载入，请确认 model-viewer.min.js 已上传</p>';
     }

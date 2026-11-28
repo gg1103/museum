@@ -11,26 +11,26 @@ window.SITE = {
   lead: '骑楼的装饰不在整栋楼上，而在这些巴掌大的地方：卷草、缠枝、叶片、缠枝纹。八件浮雕从三座骑楼的门廊、女儿墙和窗楣上取下，放在暗房里，等你用一支蜡烛把它们一盏一盏照亮。',
   sectionTitle: '浮雕细部',
   archLine: '骑楼数字档案',
-  footL: '摄影测量重建 · 广西艺术学院',
+  footL: '广西艺术学院',
   footR: '指导教师 · 李鸿捷　2026',
 
   /* ---------- 八件浮雕 ----------
      src 是模型文件名，name / note 会显示在卡片和放大页 */
   items: [
     {
-      no: '01', name: '卷草浮雕', src: 'relief-1.glb', flip: 180, crop: 1.36,
+      no: '01', name: '卷草浮雕', src: 'relief-1.glb', flip: 180,
       note: '门廊檐下的卷草，向两侧延展，收口处收成一个涡。'
     },
     {
-      no: '02', name: '装饰浮雕', src: 'relief-2.glb', flip: 180, crop: 1.36,
+      no: '02', name: '装饰浮雕', src: 'relief-2.glb', flip: 180,
       note: '窗楣上方的对称装饰，左右各一，中间留白。'
     },
     {
-      no: '03', name: '缠枝花纹', src: 'relief-3.glb', crop: 1.18,
+      no: '03', name: '缠枝花纹', src: 'relief-3.glb',
       note: '缠枝纹，枝蔓相互穿插，是骑楼女儿墙最常见的做法。'
     },
     {
-      no: '04', name: '叶片浮雕', src: 'relief-4.glb', crop: 1.36,
+      no: '04', name: '叶片浮雕', src: 'relief-4.glb',
       note: '单片叶片，边缘翻卷，背后有浅浅的底衬。'
     },
     {

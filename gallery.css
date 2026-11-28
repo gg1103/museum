@@ -293,6 +293,7 @@ main {
   overflow: hidden;
 }
 .modal-stage model-viewer {
+  transition: opacity 0.35s var(--ease);
   width: min(68vw, 880px);
   height: min(66vh, 720px);
   background: transparent;
