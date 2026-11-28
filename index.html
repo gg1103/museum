@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>樓語 · 檔案 — Echoes of the Arcades</title>
-<meta name="description" content="骑楼浮雕细部档案：八件浮雕，在烛光下依次显影。移动鼠标，光会跟着走。">
+<meta name="description" content="八件骑楼浮雕，在烛光下依次显影。滚动切换，拖动旋转。">
 <meta name="theme-color" content="#080706">
 <link rel="icon" href="favicon.png" sizes="128x128">
 <link rel="apple-touch-icon" href="favicon.png">
@@ -20,56 +20,36 @@
 <body>
 
 <header class="bar">
-  <a class="mark" href="index.html">
+  <span class="mark">
     <span class="mark-cn" data-bind="title">樓語</span>
     <span class="mark-sub">檔案</span>
-  </a>
-  <nav class="bar-nav">
-    <button type="button" class="btn" id="litAll" aria-pressed="false">点亮全部</button>
-  </nav>
+  </span>
+  <span class="hint"><i class="dot"></i>滚轮切换 · 拖动旋转</span>
 </header>
 
 <main>
-  <section class="hero">
-    <p class="eyebrow">Echoes of the Arcades · Relief Archive</p>
-    <h1 data-bind="title">樓語</h1>
-    <p class="en" data-bind="titleEn">Echoes of the Arcades</p>
-    <p class="lead" data-bind="lead"></p>
-    <p class="hint"><i class="dot"></i>移动鼠标，烛光会跟着走</p>
-  </section>
+  <div class="rail" id="rail"></div>
 
-  <div class="section-head">
-    <h2 data-bind="sectionTitle">浮雕细部</h2>
-    <span>共 <b id="count">08</b> 件</span>
+  <div class="caption" id="caption">
+    <span class="no" id="capNo">01</span>
+    <h2 id="capName">—</h2>
+    <p id="capNote">—</p>
   </div>
 
-  <section class="grid" id="grid" aria-label="浮雕档案"></section>
-
-  <footer class="foot">
-    <span data-bind="footL"></span>
-    <span data-bind="footR"></span>
-  </footer>
+  <nav class="pager" id="pager" aria-label="切换浮雕"></nav>
 </main>
 
-<!-- 暗幕与烛光 -->
+<footer class="foot">
+  <span data-bind="footL"></span>
+  <span data-bind="footR"></span>
+</footer>
+
 <div class="veil" aria-hidden="true"></div>
 <div class="warm" aria-hidden="true"></div>
 <div class="candle" aria-hidden="true">
   <span class="glow"></span>
+  <span class="wax"></span>
   <span class="flame"></span>
-</div>
-
-<!-- 放大查看 -->
-<div class="viewer" id="viewer" hidden>
-  <div class="viewer-top">
-    <span class="no" id="viewerNo"></span>
-    <button type="button" class="btn" id="viewerClose">关闭 ✕</button>
-  </div>
-  <div class="viewer-stage" id="viewerStage"></div>
-  <div class="viewer-bottom">
-    <h3 id="viewerName"></h3>
-    <p id="viewerNote"></p>
-  </div>
 </div>
 
 <script src="content.js"></script>

@@ -1,5 +1,5 @@
 /* ============================================================
-   檔案页：浮雕卡片 + 烛光跟随 + 放大查看
+   檔案页：横向轮播 + 烛光 + 限幅旋转
    ============================================================ */
 
 (function () {
@@ -8,15 +8,20 @@
   var SITE = window.SITE || {};
   var items = Array.isArray(SITE.items) ? SITE.items : [];
 
-  var grid = document.getElementById('grid');
-  var bar = document.getElementById('litAll');
-  var countEl = document.getElementById('count');
-  var viewer = document.getElementById('viewer');
-  var viewerStage = document.getElementById('viewerStage');
-  var viewerNo = document.getElementById('viewerNo');
-  var viewerName = document.getElementById('viewerName');
-  var viewerNote = document.getElementById('viewerNote');
-  var viewerClose = document.getElementById('viewerClose');
+  var railEl = document.getElementById('rail');
+  var pagerEl = document.getElementById('pager');
+  var capNo = document.getElementById('capNo');
+  var capName = document.getElementById('capName');
+  var capNote = document.getElementById('capNote');
+
+  var BASE_PHI = 82;      // 正视角（略微俯视，能看出浮雕厚度）
+  var LIMIT = 20;         // 上下左右最大偏转 ±20°
+  var index = 0;
+  var viewers = [];
+  var loaded = [];
+
+  var curTheta = 0;
+  var curPhi = BASE_PHI;
 
   /* ---------------- 载入 model-viewer ---------------- */
   var SOURCES = [
@@ -35,11 +40,9 @@
       document.head.appendChild(s);
     });
   }
-
   function withTimeout(p, ms) {
     return Promise.race([p, new Promise(function (_, rej) { setTimeout(function () { rej(new Error('timeout')); }, ms); })]);
   }
-
   async function ensureViewer() {
     if (window.customElements && customElements.get('model-viewer')) return true;
     for (var i = 0; i < SOURCES.length; i++) {
@@ -49,139 +52,180 @@
     return false;
   }
 
-  /* ---------------- 卡片 ---------------- */
-  function makeViewer(src, name) {
-    var mv = document.createElement('model-viewer');
-    mv.setAttribute('alt', name || '浮雕');
-    mv.setAttribute('camera-controls', '');
-    mv.setAttribute('disable-zoom', '');
-    mv.setAttribute('interaction-prompt', 'none');
-    mv.setAttribute('touch-action', 'pan-y');
-    mv.setAttribute('environment-image', 'neutral');
-    mv.setAttribute('tone-mapping', 'neutral');
-    mv.setAttribute('exposure', '1.05');
-    mv.setAttribute('shadow-intensity', '0');
-    mv.setAttribute('camera-orbit', '0deg 80deg auto');
-    mv.setAttribute('min-field-of-view', '18deg');
-    mv.setAttribute('loading', 'lazy');
-    mv.setAttribute('reveal', 'auto');
-    mv.setAttribute('src', src);
-    return mv;
-  }
-
-  function renderCards() {
-    if (!grid) return;
-    grid.innerHTML = '';
-    if (countEl) countEl.textContent = items.length ? String(items.length).padStart(2, '0') : '00';
+  /* ---------------- 构建轨道 ---------------- */
+  function buildRail() {
+    railEl.innerHTML = '';
+    viewers = [];
+    loaded = [];
 
     items.forEach(function (item, i) {
-      var card = document.createElement('button');
-      card.type = 'button';
-      card.className = 'card';
+      var slide = document.createElement('section');
+      slide.className = 'slide';
+      slide.setAttribute('aria-label', item.name || ('浮雕 ' + (i + 1)));
 
-      var media = document.createElement('div');
-      media.className = 'card-media';
+      var wrap = document.createElement('div');
+      wrap.className = 'model';
 
-      var mv = makeViewer(item.src, item.name);
-      media.appendChild(mv);
+      var mv = document.createElement('model-viewer');
+      mv.setAttribute('alt', item.name || '浮雕');
+      mv.setAttribute('environment-image', 'neutral');
+      mv.setAttribute('tone-mapping', 'neutral');
+      mv.setAttribute('exposure', '1.06');
+      mv.setAttribute('shadow-intensity', '0.45');
+      mv.setAttribute('shadow-softness', '1');
+      mv.setAttribute('interaction-prompt', 'none');
+      mv.setAttribute('camera-orbit', '0deg ' + BASE_PHI + 'deg auto');
+      mv.setAttribute('min-field-of-view', '16deg');
+      mv.setAttribute('touch-action', 'none');
+      mv.setAttribute('loading', 'lazy');
 
-      var cap = document.createElement('div');
-      cap.className = 'card-cap';
-      var no = document.createElement('span');
-      no.className = 'cap-no';
-      no.textContent = item.no || String(i + 1).padStart(2, '0');
-      var name = document.createElement('span');
-      name.className = 'cap-name';
-      name.textContent = item.name || '';
-      cap.appendChild(no);
-      cap.appendChild(name);
-
-      card.appendChild(media);
-      card.appendChild(cap);
-      card.addEventListener('click', function () { openViewer(i); });
-
-      grid.appendChild(card);
+      wrap.appendChild(mv);
+      slide.appendChild(wrap);
+      railEl.appendChild(slide);
+      viewers.push(mv);
     });
-  }
 
-  /* ---------------- 放大查看 ---------------- */
-  var bigViewer = null;
-
-  function openViewer(i) {
-    var item = items[i];
-    if (!item || !viewer) return;
-
-    if (!bigViewer) {
-      bigViewer = document.createElement('model-viewer');
-      bigViewer.setAttribute('camera-controls', '');
-      bigViewer.setAttribute('interaction-prompt', 'none');
-      bigViewer.setAttribute('touch-action', 'pan-y');
-      bigViewer.setAttribute('environment-image', 'neutral');
-      bigViewer.setAttribute('tone-mapping', 'neutral');
-      bigViewer.setAttribute('exposure', '1.1');
-      bigViewer.setAttribute('shadow-intensity', '0.35');
-      bigViewer.setAttribute('shadow-softness', '0.9');
-      bigViewer.setAttribute('camera-orbit', '0deg 80deg auto');
-      bigViewer.setAttribute('min-field-of-view', '14deg');
-      viewerStage.appendChild(bigViewer);
-    }
-
-    bigViewer.setAttribute('src', item.src);
-    if (viewerNo) viewerNo.textContent = item.no || '';
-    if (viewerName) viewerName.textContent = item.name || '';
-    if (viewerNote) viewerNote.textContent = item.note || '';
-
-    viewer.classList.add('is-open');
-    viewer.removeAttribute('hidden');
-    document.body.classList.add('is-lit');
-    document.body.style.overflow = 'hidden';
-  }
-
-  function closeViewer() {
-    if (!viewer) return;
-    viewer.classList.remove('is-open');
-    document.body.classList.remove('is-lit');
-    document.body.style.overflow = '';
-    if (bar) {
-      bar.setAttribute('aria-pressed', 'false');
-      bar.textContent = '点亮全部';
+    if (pagerEl) {
+      pagerEl.innerHTML = '';
+      items.forEach(function (item, i) {
+        var b = document.createElement('button');
+        b.type = 'button';
+        b.textContent = item.no || String(i + 1).padStart(2, '0');
+        b.addEventListener('click', function () { go(i); });
+        pagerEl.appendChild(b);
+      });
     }
   }
 
-  if (viewerClose) viewerClose.addEventListener('click', closeViewer);
-  if (viewer) {
-    viewer.addEventListener('click', function (e) {
-      if (e.target === viewer) closeViewer();
+  function loadAround(i) {
+    [i - 1, i, i + 1].forEach(function (k) {
+      if (k < 0 || k >= items.length) return;
+      if (loaded[k]) return;
+      loaded[k] = true;
+      viewers[k].setAttribute('src', items[k].src);
     });
   }
 
+  /* ---------------- 切换 ---------------- */
+  function layout() {
+    var first = railEl.firstElementChild;
+    if (!first) return;
+    var w = first.getBoundingClientRect().width;
+    var offset = (window.innerWidth - w) / 2;
+    railEl.style.transform = 'translate3d(' + (offset - index * w) + 'px,0,0)';
+  }
+
+  function go(i, silent) {
+    index = Math.max(0, Math.min(items.length - 1, i));
+    layout();
+
+    var item = items[index] || {};
+    if (capNo) capNo.textContent = item.no || '';
+    if (capName) capName.textContent = item.name || '';
+    if (capNote) capNote.textContent = item.note || '';
+
+    if (pagerEl) {
+      Array.prototype.forEach.call(pagerEl.children, function (b, k) {
+        b.classList.toggle('is-on', k === index);
+      });
+    }
+
+    // 复位当前模型的观察角度
+    curTheta = 0;
+    curPhi = BASE_PHI;
+    if (viewers[index]) {
+      viewers[index].setAttribute('camera-orbit', '0deg ' + BASE_PHI + 'deg auto');
+    }
+
+    loadAround(index);
+    measure();
+  }
+
+  /* ---------------- 滚轮 ---------------- */
+  var lastWheel = 0;
+  window.addEventListener('wheel', function (e) {
+    e.preventDefault();
+    var now = Date.now();
+    if (now - lastWheel < 620) return;
+    if (Math.abs(e.deltaY) < 6 && Math.abs(e.deltaX) < 6) return;
+    lastWheel = now;
+    var d = Math.abs(e.deltaY) > Math.abs(e.deltaX) ? e.deltaY : e.deltaX;
+    go(index + (d > 0 ? 1 : -1));
+  }, { passive: false });
+
+  // 触控板横向滑动
+  var lastX = 0;
+  window.addEventListener('touchstart', function (e) {
+    lastX = e.touches[0].clientX;
+  }, { passive: true });
+  window.addEventListener('touchend', function (e) {
+    var dx = e.changedTouches[0].clientX - lastX;
+    if (Math.abs(dx) > 55) go(index + (dx < 0 ? 1 : -1));
+  }, { passive: true });
+
+  /* ---------------- 键盘 ---------------- */
   document.addEventListener('keydown', function (e) {
-    if (e.key === 'Escape') {
-      if (viewer && viewer.classList.contains('is-open')) closeViewer();
-      else setLit(false);
-    }
-    if (e.key === 'l' || e.key === 'L') setLit(!document.body.classList.contains('is-lit'));
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') { e.preventDefault(); go(index + 1); }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') { e.preventDefault(); go(index - 1); }
+    if (e.key === 'l' || e.key === 'L') document.body.classList.toggle('is-lit');
   });
 
-  /* ---------------- 全部点亮 ---------------- */
-  function setLit(on) {
-    document.body.classList.toggle('is-lit', on);
-    if (bar) {
-      bar.setAttribute('aria-pressed', on ? 'true' : 'false');
-      bar.textContent = on ? '吹灭' : '点亮全部';
-    }
+  /* ---------------- 拖动旋转（±20°） ---------------- */
+  var drag = null;
+
+  function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+  function applyOrbit() {
+    var mv = viewers[index];
+    if (!mv) return;
+    mv.setAttribute('camera-orbit', curTheta.toFixed(2) + 'deg ' + curPhi.toFixed(2) + 'deg auto');
   }
 
-  if (bar) {
-    bar.addEventListener('click', function () {
-      setLit(!document.body.classList.contains('is-lit'));
-    });
+  window.addEventListener('pointerdown', function (e) {
+    if (e.target.closest && e.target.closest('.pager')) return;
+    drag = {
+      x: e.clientX,
+      y: e.clientY,
+      theta: curTheta,
+      phi: curPhi,
+      touch: e.pointerType === 'touch',
+      mode: null
+    };
+  });
+
+  window.addEventListener('pointermove', function (e) {
+    if (!drag) return;
+    var dx = e.clientX - drag.x;
+    var dy = e.clientY - drag.y;
+
+    if (!drag.mode) {
+      if (Math.sqrt(dx * dx + dy * dy) < 7) return;
+      // 触屏上横向大幅滑动 = 换页；其余 = 旋转
+      drag.mode = (drag.touch && Math.abs(dx) > Math.abs(dy) * 1.5) ? 'swipe' : 'rotate';
+    }
+
+    if (drag.mode === 'rotate') {
+      curTheta = clamp(drag.theta + dx * 0.12, -LIMIT, LIMIT);
+      curPhi = clamp(drag.phi - dy * 0.12, BASE_PHI - LIMIT, BASE_PHI + LIMIT);
+      applyOrbit();
+    }
+  });
+
+  function endDrag(e) {
+    if (!drag) return;
+    if (drag.mode === 'swipe') {
+      var dx = e.clientX - drag.x;
+      if (Math.abs(dx) > 55) go(index + (dx < 0 ? 1 : -1));
+    }
+    drag = null;
   }
+  window.addEventListener('pointerup', endDrag);
+  window.addEventListener('pointercancel', function () { drag = null; });
 
   /* ---------------- 烛光 ---------------- */
   var tx = window.innerWidth * 0.5;
-  var ty = window.innerHeight * 0.38;
-  var cx = tx, cy = ty;
+  var ty = window.innerHeight * 0.46;
+  var px = tx, py = ty;
   var lastMove = Date.now();
   var t = 0;
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -197,52 +241,53 @@
   }, { passive: true });
 
   function loop() {
-    var idle = Date.now() - lastMove > 6000;
+    var idle = Date.now() - lastMove > 6500;
     if (idle) {
-      t += 0.0035;
-      tx = window.innerWidth * (0.5 + 0.24 * Math.sin(t));
-      ty = window.innerHeight * (0.46 + 0.18 * Math.sin(t * 1.6 + 1.1));
+      t += 0.0032;
+      tx = window.innerWidth * (0.5 + 0.26 * Math.sin(t));
+      ty = window.innerHeight * (0.46 + 0.16 * Math.sin(t * 1.7 + 1.1));
     }
-    var k = idle ? 0.012 : 0.16;
-    cx += (tx - cx) * k;
-    cy += (ty - cy) * k;
-    setLight(cx, cy);
+    var k = idle ? 0.012 : 0.17;
+    px += (tx - px) * k;
+    py += (ty - py) * k;
+    setLight(px, py);
     requestAnimationFrame(loop);
   }
+  if (!reduce) requestAnimationFrame(loop);
 
-  /* ---------------- 卡片光斑坐标 ---------------- */
-  var mediaEls = [];
+  /* ---------------- 光斑坐标 ---------------- */
+  var modelEls = [];
   function measure() {
-    mediaEls = Array.prototype.slice.call(document.querySelectorAll('.card-media'));
-    mediaEls.forEach(function (el) {
-      el.style.setProperty('--card-x', el.getBoundingClientRect().left + 'px');
-      el.style.setProperty('--card-y', el.getBoundingClientRect().top + 'px');
+    modelEls = Array.prototype.slice.call(document.querySelectorAll('.model'));
+    modelEls.forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      el.style.setProperty('--model-x', r.left + 'px');
+      el.style.setProperty('--model-y', r.top + 'px');
     });
   }
-  window.addEventListener('resize', measure);
-  window.addEventListener('scroll', measure, { passive: true });
+  window.addEventListener('resize', function () { measure(); layout(); });
 
   /* ---------------- 文案 ---------------- */
   function text(sel, v) { var n = document.querySelector(sel); if (n && v) n.textContent = v; }
   text('[data-bind="title"]', SITE.title);
-  text('[data-bind="titleEn"]', SITE.titleEn);
-  text('[data-bind="lead"]', SITE.lead);
   text('[data-bind="footL"]', SITE.footL);
   text('[data-bind="footR"]', SITE.footR);
-  text('[data-bind="sectionTitle"]', SITE.sectionTitle);
 
   /* ---------------- 启动 ---------------- */
+  setLight(px, py);
+  lastMove = Date.now() - 6000;   // 开场让光先走一段
+
   ensureViewer().then(function (ok) {
+    buildRail();
     if (ok) {
-      renderCards();
-    } else if (grid) {
-      grid.innerHTML = '<p style="padding:40px 0;color:#8a8073;font-size:13px;letter-spacing:.2em">三维组件未能载入，请检查 model-viewer.min.js 是否已上传</p>';
+      go(0);
+    } else {
+      var wrap = document.querySelector('.slide .model');
+      if (wrap) {
+        wrap.innerHTML = '<p style="color:#8d8375;font-size:13px;letter-spacing:.2em;text-align:center;padding:40px">三维组件未能载入，请确认 model-viewer.min.js 已上传</p>';
+      }
     }
     measure();
-    setTimeout(measure, 800);
+    setTimeout(measure, 900);
   });
-
-  setLight(cx, cy);
-  lastMove = Date.now() - 5500;   // 开场让光自己走一小段
-  if (!reduce) requestAnimationFrame(loop);
 })();
