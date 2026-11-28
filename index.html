@@ -26,7 +26,7 @@
     <span class="mark-cn" data-bind="title">樓語</span>
     <span class="mark-sub">檔案</span>
   </span>
-  <span class="hint"><i class="dot"></i>滚轮切换 · 拖动旋转</span>
+  <span class="hint"><i class="dot"></i>滚轮切换 · 点击放大</span>
 </header>
 
 <main>
@@ -51,6 +51,16 @@
   <span class="glow"></span>
   <span class="wax"></span>
   <span class="flame"></span>
+</div>
+
+<!-- 放大查看 -->
+<div class="modal" id="modal" hidden>
+  <div class="modal-stage" id="modalStage"></div>
+  <p class="modal-cap">
+    <span id="modalNo"></span>
+    <span id="modalName"></span>
+    <em>点击空白处关闭</em>
+  </p>
 </div>
 
 <script src="content.js"></script>

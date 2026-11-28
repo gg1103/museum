@@ -18,19 +18,19 @@ window.SITE = {
      src 是模型文件名，name / note 会显示在卡片和放大页 */
   items: [
     {
-      no: '01', name: '卷草浮雕', src: 'relief-1.glb', flip: 180,
+      no: '01', name: '卷草浮雕', src: 'relief-1.glb', flip: 180, crop: true,
       note: '门廊檐下的卷草，向两侧延展，收口处收成一个涡。'
     },
     {
-      no: '02', name: '装饰浮雕', src: 'relief-2.glb', flip: 180,
+      no: '02', name: '装饰浮雕', src: 'relief-2.glb', flip: 180, crop: true,
       note: '窗楣上方的对称装饰，左右各一，中间留白。'
     },
     {
-      no: '03', name: '缠枝花纹', src: 'relief-3.glb',
+      no: '03', name: '缠枝花纹', src: 'relief-3.glb', crop: true,
       note: '缠枝纹，枝蔓相互穿插，是骑楼女儿墙最常见的做法。'
     },
     {
-      no: '04', name: '叶片浮雕', src: 'relief-4.glb',
+      no: '04', name: '叶片浮雕', src: 'relief-4.glb', crop: true,
       note: '单片叶片，边缘翻卷，背后有浅浅的底衬。'
     },
     {

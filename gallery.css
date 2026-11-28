@@ -1,6 +1,5 @@
 /* ============================================================
-   樓語 · 檔案 —— 一排陈列 · 滚轮横移 · 烛光增亮
-   模型没有边框，直接浮在暗房里
+   樓語 · 檔案 —— 一排陈列 · 滚轮切换 · 随鼠标偏移 · 点击放大
    ============================================================ */
 
 :root {
@@ -153,12 +152,12 @@ main {
   min-height: 0;
   display: flex;
   align-items: center;
-  gap: clamp(20px, 4vw, 64px);
+  gap: clamp(17px, 3.4vw, 54px);   /* 距离缩了 15% */
   overflow-x: auto;
   overflow-y: hidden;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
-  padding: 0 clamp(20px, 4vw, 56px);
+  padding: 0;           /* 首尾留白由 JS 动态设置，保证第一件也能居中 */
   scrollbar-width: none;
   -ms-overflow-style: none;
 }
@@ -171,23 +170,25 @@ main {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  /* 无边框：没有背景、没有描边，只有模型本身 */
   background: none;
   border: none;
   padding: 0;
   cursor: none;
+  opacity: 0.8;                 /* 非中心：暗 20% */
+  transition: opacity 0.5s var(--ease);
 }
+.slide.is-near { opacity: 0.9; } /* 相邻：暗 10% */
+.slide.is-center { opacity: 1; }
 
 .model {
   position: relative;
   width: 100%;
   aspect-ratio: 1 / 1;
-  transition: transform 0.5s var(--ease), opacity 0.5s var(--ease);
-  transform: scale(0.92);
-  opacity: 0.72;
+  overflow: hidden;             /* 裁掉模型自带的画框 */
+  transition: transform 0.55s var(--ease);
+  transform: scale(1);
 }
-.slide.is-near .model { transform: scale(0.97); opacity: 0.9; }
-.slide.is-center .model { transform: scale(1); opacity: 1; }
+.slide.is-center .model { transform: scale(1.1); }   /* 居中放大 10% */
 
 .model model-viewer {
   width: 100%;
@@ -200,7 +201,9 @@ main {
 }
 .model model-viewer::part(default-progress-bar) { display: none; }
 
-/* 烛光在模型上的增亮 */
+/* 有画框的模型：放大一点把框推出可视区 */
+.slide.is-crop .model model-viewer { transform: scale(1.16); }
+
 .model::after {
   content: "";
   position: absolute;
@@ -217,8 +220,8 @@ main {
   align-items: baseline;
   justify-content: center;
   gap: 12px;
-  margin-top: 6px;
-  opacity: 0.55;
+  margin-top: 8px;
+  opacity: 0.6;
   transition: opacity 0.5s var(--ease);
 }
 .slide.is-center .slide-cap { opacity: 1; }
@@ -263,6 +266,69 @@ main {
   color: var(--faint);
 }
 
+/* ---------- 放大查看 ---------- */
+.modal {
+  position: fixed;
+  inset: 0;
+  z-index: 45;
+  display: grid;
+  grid-template-rows: 1fr auto;
+  padding: clamp(30px, 6vh, 70px) clamp(20px, 6vw, 90px) clamp(24px, 4vh, 44px);
+  background: rgba(5, 4, 3, 0.94);
+  backdrop-filter: blur(7px);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.4s var(--ease), visibility 0.4s;
+  cursor: none;
+}
+.modal.is-open { opacity: 1; visibility: visible; }
+
+.modal-stage {
+  position: relative;
+  min-height: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+.modal-stage model-viewer {
+  width: min(78vw, 1000px);
+  height: 100%;
+  background: transparent;
+  --poster-color: transparent;
+  --progress-bar-color: transparent;
+  --progress-mask: transparent;
+  outline: none;
+}
+.modal-stage model-viewer::part(default-progress-bar) { display: none; }
+
+.modal-cap {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 16px;
+  font-size: 12px;
+  letter-spacing: 0.2em;
+  color: var(--ink-dim);
+}
+.modal-cap span:first-child {
+  font-family: var(--latin);
+  font-size: 10px;
+  color: var(--faint);
+}
+.modal-cap span:nth-child(2) {
+  font-family: var(--kai);
+  font-size: 20px;
+  letter-spacing: 0.16em;
+  color: #f5eddd;
+}
+.modal-cap em {
+  font-style: normal;
+  font-size: 10px;
+  letter-spacing: 0.22em;
+  color: var(--faint);
+}
+
 /* ---------- 烛光层 ---------- */
 .warm {
   position: fixed;
@@ -283,7 +349,7 @@ body.is-lit .candle { opacity: 0; }
   position: fixed;
   left: 0; top: 0;
   width: 0; height: 0;
-  z-index: 35;
+  z-index: 50;
   pointer-events: none;
   transform: translate3d(var(--lx), var(--ly), 0);
   transition: opacity 0.4s var(--ease);
@@ -334,18 +400,19 @@ body.is-lit .candle { opacity: 0; }
 /* ---------- 响应式 ---------- */
 @media (max-width: 900px) {
   .slide { width: clamp(200px, 52vw, 300px); }
-  .rail { gap: 18px; }
+  .rail { gap: 16px; }
 }
 @media (max-width: 700px) {
   body { cursor: auto; }
-  .slide { cursor: auto; }
+  .slide, .modal { cursor: auto; }
   .candle { display: none; }
   .warm { opacity: 0.6; }
   .arch-line { letter-spacing: 0.3em; text-indent: 0.3em; }
+  .modal-stage model-viewer { width: 92vw; }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .candle .flame, .hint .dot { animation: none; }
   .rail { scroll-behavior: auto; }
-  .model, .slide-cap { transition: none; }
+  .slide, .model, .slide-cap { transition: none; }
 }
