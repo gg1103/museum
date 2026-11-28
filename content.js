@@ -10,6 +10,7 @@ window.SITE = {
   titleEn: 'Echoes of the Arcades',
   lead: '骑楼的装饰不在整栋楼上，而在这些巴掌大的地方：卷草、缠枝、叶片、缠枝纹。八件浮雕从三座骑楼的门廊、女儿墙和窗楣上取下，放在暗房里，等你用一支蜡烛把它们一盏一盏照亮。',
   sectionTitle: '浮雕细部',
+  archLine: '骑楼数字档案',
   footL: '摄影测量重建 · 广西艺术学院',
   footR: '指导教师 · 李鸿捷　2026',
 
